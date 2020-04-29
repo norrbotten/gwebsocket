@@ -1,0 +1,6 @@
+[submodule "dependencies/lunar-sol2"]
+	path = dependencies/lunar-sol2
+	url = https://github.com/norrbotten/lunar-sol2.git
+[submodule "dependencies/ixwebsocket"]
+	path = dependencies/ixwebsocket
+	url = https://github.com/machinezone/IXWebSocket.git
