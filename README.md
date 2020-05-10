@@ -35,4 +35,4 @@ IXWebSocket needs to be built for 32 bit and installed, for this you will additi
 
 1. Require it in your script `require("gwebsocket")`
 2. This sets a global variable called `gwebsocket`, so don't overwrite it (blame garry for no returns from require)
-3. See the examples (coming)
+3. See the examples
