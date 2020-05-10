@@ -1,6 +1,6 @@
 
 workspace "gwebsocket"
-    location "makefiles"
+    location "build"
 
     architecture "x32"
     language "C++"

@@ -1,2 +1,5 @@
 build/
 makefiles/
+.vscode/
+
+copy_module.sh

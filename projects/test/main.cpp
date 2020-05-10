@@ -4,7 +4,7 @@
 #include "../module/websocket-client.hpp"
 
 int main() {
-    websocket_client socket("ws://10.10.1.171:8080");
+    websocket_client socket("wss://10.10.1.171:8080");
 
     while (true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
