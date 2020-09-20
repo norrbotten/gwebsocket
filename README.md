@@ -9,10 +9,9 @@ You have two options:
 2. Build it yourself
 
 ## Using the ready made module
-(this doesn't exist yet since this module isn't actually functional right now)
 1. Click on `gmsv_gwebsocket_linux.dll` above
 2. Click on the download button
-3. Stick it in your servers `lua/bin` folder
+3. Stick it in your servers `lua/bin` folder, if it doesnt exist, create it.
 
 ## Building it yourself
 
