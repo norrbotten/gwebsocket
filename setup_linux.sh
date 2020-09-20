@@ -44,17 +44,3 @@ export LD_LIBRARY_PATH=$DIR/dependencies/zlib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PAT
 make -j
 
 cd ../../..
-
-# build the project itself
-
-if [ -d "./build" ]; then
-    rm -rf build
-fi
-
-premake5 gmake2
-
-pwd
-
-cd build
-
-make -j config=release && cp module/bin/gmsv_gwebsocket_linux.dll ../.
