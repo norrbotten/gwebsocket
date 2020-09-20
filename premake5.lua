@@ -28,8 +28,8 @@ function includeLunarSOL2()
 end
 
 function includeIXWebSockets()
-    links { "ixwebsocket:static", "z:static", "pthread" }
-    libdirs { "dependencies/zlib", "dependencies/ixwebsocket/build" }
+    links { "ixwebsocket:static", "z:static", "ssl:static", "crypto:static", "pthread", "dl" }
+    libdirs { "dependencies/zlib", "dependencies/ixwebsocket/build", "dependencies/openssl" }
 end
 
 project "module"
