@@ -1,19 +1,20 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"C_Cpp.default.includePath": [
-			"./dependencies/ixwebsocket/",
-			"./dependencies/lunar-sol2/lunar/",
-			"./dependencies/lunar-sol2/sol2/include/",
-		],
-		"clang-tidy.compilerArgs": [
-			"-Idependencies/ixwebsocket",
-			"-Idependencies/lunar-sol2/lunar/",
-			"-Idependencies/lunar-sol2/sol2/include/",
-		]
-	}
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "C_Cpp.default.includePath": [
+            "dependencies/ixwebsocket/",
+            "dependencies/lunar-sol2/",
+            "dependencies/lunar-sol2/sol2/include/",
+        ],
+        "clang-tidy.compilerArgs": [
+            "-std=c++2a",
+            "-Idependencies/ixwebsocket",
+            "-Idependencies/lunar-sol2/",
+            "-Idependencies/lunar-sol2/sol2/include",
+        ]
+    }
 }
