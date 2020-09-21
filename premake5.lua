@@ -13,28 +13,27 @@ workspace "gwebsocket"
 
     filter { "configurations:debug" }
         symbols "On"
-        buildoptions { "-Wall", "-Wextra",
-                       "-Wnull-dereference", "-Wmisleading-indentation" }
+        buildoptions { }
 
     filter { "configurations:release" }
-        optimize "On"
-        buildoptions { "-O3", "-Wall", "-Wextra",
+        optimize "Full"
+        buildoptions { "-Wall", "-Wextra", "-Wpedantic",
                        "-Wnull-dereference", "-Wmisleading-indentation" }
 
     filter { }
 
 function includeLunarSOL2()
-    includedirs { "dependencies/lunar-sol2", "dependencies/lunar-sol2/sol2/include" }
+    includedirs { "ext/lunar-sol2", "ext/lunar-sol2/sol2/include" }
 end
 
 function includeIXWebSockets()
     links { "ixwebsocket:static", "z:static", "ssl:static", "crypto:static", "pthread", "dl" }
-    libdirs { "dependencies/zlib", "dependencies/ixwebsocket/build", "dependencies/openssl" }
+    libdirs { "ext/zlib", "ext/ixwebsocket/build", "ext/openssl" }
 end
 
 project "module"
     kind "SharedLib"
-    files "projects/module/**"
+    files "src/module/**"
 
     targetname "gwebsocket"
     targetprefix "gmsv_"
@@ -49,6 +48,7 @@ project "module"
 
 project "test"
     kind "ConsoleApp"
+    files "src/test/**"
 
     targetname "test"
     targetprefix ""
@@ -61,7 +61,6 @@ project "test"
     includeLunarSOL2()
     includeIXWebSockets()
 
-    files "projects/test/**"
 
 newaction {
     trigger     = "clean",

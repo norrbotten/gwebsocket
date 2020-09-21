@@ -3,7 +3,7 @@ DIR=$(pwd)
 
 # download zlib and openssl
 
-cd dependencies
+cd ext
 
 if [ -d "./zlib" ]; then
     rm -rf zlib
