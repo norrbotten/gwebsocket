@@ -13,11 +13,12 @@ workspace "gwebsocket"
 
     filter { "configurations:debug" }
         symbols "On"
-        buildoptions { }
+        buildoptions { "-std=c++2a" }
 
     filter { "configurations:release" }
         optimize "Full"
-        buildoptions { "-Wall", "-Wextra", "-Wpedantic",
+        buildoptions { "-std=c++2a",
+                       "-Wall", "-Wextra", "-Wpedantic",
                        "-Wnull-dereference", "-Wmisleading-indentation" }
 
     filter { }

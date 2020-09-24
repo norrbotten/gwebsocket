@@ -1,3 +1,4 @@
+/*
 #include <iostream>
 #include <thread>
 
@@ -14,3 +15,6 @@ int main() {
         }
     }
 }
+*/
+
+int main() {}

@@ -1,46 +1,139 @@
-
+#define SOL_ALL_SAFETIES_ON 1
 #include <sol/sol.hpp>
 
-#include "websocket-client.hpp"
+#include "ws_client.hpp"
 
-websocket_client_manager ws_client_manager;
+template <typename... T>
+void call_lua_error(sol::state_view s, T... args) {
+    sol::function err = s.globals()["error"];
+    err(args...);
+}
 
-// TODO: handle exceptions
-struct lua_wsclient {
-    int connection_id;
+static GWebSocket::ClientPool g_client_pool;
 
-    lua_wsclient(std::string uri)
-        : connection_id(ws_client_manager.new_websocket(uri)) {
-    }
+struct ILuaClient {
+    int id;
+
+    ILuaClient(std::string uri)
+        : id(g_client_pool.spawn(uri)) {}
 
     sol::object next_event(sol::this_state s) {
         sol::state_view lua(s);
 
-        auto socket = ws_client_manager.get_websocket(connection_id);
-        auto evnt   = socket->next_event();
+        auto sock = g_client_pool.get(id);
+        if (sock == nullptr || (sock != nullptr && sock->closed())) {
+            call_lua_error(lua, "gwebsocket: socket is dead");
+            return sol::nil;
+        }
 
-        if (!evnt)
-            return sol::make_object(lua, sol::nil);
+        if (auto msg = sock->next_message(); msg.has_value()) {
+            auto& val = msg.value();
 
-        // clang-format off
-        return lua.create_table_with("size", evnt.value().size,
-                                     "type", client_event_name(evnt.value().type),
-                                     "payload", evnt.value().payload);
-        // clang-format on
+            // clang-format off
+            switch (val.type) {
+            case ix::WebSocketMessageType::Message:
+                return lua.create_table_with("size", val.wireSize,
+                                             "type", "message",
+                                             "is_binary", val.binary,
+                                             "payload", val.str);
+
+            case ix::WebSocketMessageType::Fragment:
+                return lua.create_table_with("size", val.wireSize,
+                                             "type", "message_fragment",
+                                             "is_binary", val.binary,
+                                             "payload", val.str);
+
+            case ix::WebSocketMessageType::Open:
+                return lua.create_table_with("type", "opened");
+
+            case ix::WebSocketMessageType::Close:
+                return lua.create_table_with("type", "closed");
+
+            case ix::WebSocketMessageType::Error:
+                return lua.create_table_with("type", "error",
+                                             "reason", val.errorInfo.reason,
+                                             "status", val.errorInfo.http_status);
+
+            case ix::WebSocketMessageType::Ping: break;
+            case ix::WebSocketMessageType::Pong: break;
+            }
+            // clang-format on
+        }
+
+        return sol::nil;
     }
 
     void send(const std::string& payload, sol::this_state s) {
         sol::state_view lua(s);
 
-        auto socket = ws_client_manager.get_websocket(connection_id);
-        socket->send(payload);
+        auto sock = g_client_pool.get(id);
+        if (sock == nullptr || (sock != nullptr && sock->closed())) {
+            call_lua_error(lua, "gwebsocket: socket is dead");
+            return;
+        }
+
+        sock->socket().send(payload);
     }
 
     void send_binary(const std::string& payload, sol::this_state s) {
         sol::state_view lua(s);
 
-        auto socket = ws_client_manager.get_websocket(connection_id);
-        socket->send_binary(payload);
+        auto sock = g_client_pool.get(id);
+        if (sock == nullptr || (sock != nullptr && sock->closed())) {
+            call_lua_error(lua, "gwebsocket: socket is dead");
+            return;
+        }
+
+        sock->socket().send(payload, true);
+    }
+
+    void connect(sol::this_state s) {
+        sol::state_view lua(s);
+
+        auto sock = g_client_pool.get(id);
+        if (sock == nullptr || (sock != nullptr && sock->closed())) {
+            call_lua_error(lua, "gwebsocket: socket is dead");
+            return;
+        }
+
+        if (sock->connect()) {
+            call_lua_error(lua, "gwebsocket: socket already started");
+            return;
+        }
+    }
+
+    void close(sol::this_state s) {
+        sol::state_view lua(s);
+
+        auto sock = g_client_pool.get(id);
+        if (sock == nullptr || (sock != nullptr && sock->closed())) {
+            call_lua_error(lua, "gwebsocket: socket is dead");
+            return;
+        }
+
+        sock->close();
+    }
+
+    sol::object state(sol::this_state s) {
+        sol::state_view lua(s);
+
+        auto sock = g_client_pool.get(id);
+        if (sock == nullptr || (sock != nullptr && sock->closed())) {
+            call_lua_error(lua, "gwebsocket: socket is dead");
+            return sol::nil;
+        }
+
+        if (!sock->started())
+            return sol::make_object(lua, "offline");
+
+        switch (sock->socket().getReadyState()) {
+        case ix::ReadyState::Connecting: return sol::make_object(lua, "connecting");
+        case ix::ReadyState::Open: return sol::make_object(lua, "open");
+        case ix::ReadyState::Closing: return sol::make_object(lua, "closing");
+        case ix::ReadyState::Closed: return sol::make_object(lua, "closed");
+        }
+
+        return sol::nil;
     }
 };
 
@@ -51,13 +144,19 @@ DLLEXPORT int gmod13_open(lua_State* L) {
 
     sol::table websocket = lua.create_table();
 
-    sol::usertype<lua_wsclient> wsclient =
-        lua.new_usertype<lua_wsclient>("client", sol::constructors<lua_wsclient(std::string)>());
+    auto wsclient =
+        lua.new_usertype<ILuaClient>("client", sol::constructors<ILuaClient(std::string)>());
 
-    wsclient["next_event"] = &lua_wsclient::next_event;
+    wsclient["connect"] = &ILuaClient::connect; // Connect the socket
+    wsclient["close"] = &ILuaClient::close; // Disconnect the socket, warning: closing is syncronous
+                                            // and may lock up your game for a bit
 
-    wsclient["send"]        = &lua_wsclient::send;
-    wsclient["send_binary"] = &lua_wsclient::send_binary;
+    wsclient["state"] = &ILuaClient::state; // Get its state
+
+    wsclient["send"]        = &ILuaClient::send;        // Async send ascii data
+    wsclient["send_binary"] = &ILuaClient::send_binary; // Async send binary data
+
+    wsclient["next_event"] = &ILuaClient::next_event; // Get the next event in the queue
 
     websocket["client"] = wsclient;
 
@@ -69,7 +168,7 @@ DLLEXPORT int gmod13_open(lua_State* L) {
 DLLEXPORT int gmod13_close(lua_State*) {
     Lunar::Loader::Deinitialize();
 
-    ws_client_manager.~websocket_client_manager();
+    g_client_pool.~ClientPool();
 
     return 0;
 }
