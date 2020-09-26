@@ -23,8 +23,17 @@ namespace GWebSocket {
             m_socket.setMaxWaitBetweenReconnectionRetries(5);
 
             m_socket.setOnMessageCallback([&](const ix::WebSocketMessagePtr& msg_ptr) {
-                std::scoped_lock g(m_messages_mtx);
-                m_messages.push_back(*msg_ptr);
+                std::lock_guard g(m_messages_mtx);
+                printf("[c++] message callback\n");
+
+                if (msg_ptr->type == ix::WebSocketMessageType::Message ||
+                    msg_ptr->type == ix::WebSocketMessageType::Fragment) {
+                    m_messages.push_back(
+                        {std::string(msg_ptr->str), ix::WebSocketMessage(*msg_ptr)});
+                }
+                else {
+                    m_messages.push_back({"", ix::WebSocketMessage(*msg_ptr)});
+                }
             });
         }
 
@@ -64,10 +73,10 @@ namespace GWebSocket {
 
         auto& socket() { return m_socket; }
 
-        std::optional<ix::WebSocketMessage> next_message() {
-            std::scoped_lock g(m_messages_mtx);
+        std::optional<std::pair<std::string, ix::WebSocketMessage>> next_message() {
+            std::lock_guard g(m_messages_mtx);
 
-            if (m_messages.size() == 0)
+            if (m_messages.empty())
                 return std::nullopt;
 
             auto msg = m_messages.front();
@@ -75,12 +84,14 @@ namespace GWebSocket {
             return msg;
         }
 
+        auto num_messages() const { return m_messages.size(); }
+
     private:
         ix::WebSocket            m_socket;
         ix::WebSocketHttpHeaders m_headers;
 
-        std::deque<ix::WebSocketMessage> m_messages;
-        std::mutex                       m_messages_mtx;
+        std::deque<std::pair<std::string, ix::WebSocketMessage>> m_messages;
+        std::mutex                                               m_messages_mtx;
 
         bool m_started = false;
         bool m_closed  = false;
@@ -96,8 +107,6 @@ namespace GWebSocket {
         int spawn(const std::string& uri) {
             auto client               = new Client(uri);
             m_clients[m_next_index++] = client;
-
-            printf("%p\n", (void*)client);
             return m_next_index - 1;
         }
 
@@ -110,18 +119,6 @@ namespace GWebSocket {
 
         Client* get(int id) {
             if (m_clients.contains(id)) {
-                auto client = m_clients.at(id);
-
-                if (client->started() &&
-                    client->socket().getReadyState() == ix::ReadyState::Closed) {
-
-                    kill(id);
-                    return nullptr;
-                }
-
-                printf("got client %p from id %i, state: %i\n", (void*)client, id,
-                       (int)client->socket().getReadyState());
-
                 return m_clients.at(id);
             }
 
