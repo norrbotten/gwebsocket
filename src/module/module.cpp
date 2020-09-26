@@ -164,6 +164,18 @@ struct ILuaClient {
 
         return sol::nil;
     }
+
+    void set_header(sol::this_state s, const std::string& key, const std::string& value) {
+        sol::state_view lua(s);
+
+        auto sock = g_client_pool.get(id);
+        if (sock == nullptr || (sock != nullptr && sock->closed())) {
+            call_lua_error(lua, "gwebsocket: socket is dead");
+            return;
+        }
+
+        sock->set_header(key, value);
+    }
 };
 
 DLLEXPORT int gmod13_open(lua_State* L) {
@@ -190,6 +202,8 @@ DLLEXPORT int gmod13_open(lua_State* L) {
     wsclient["next_event"] = &ILuaClient::next_event; // Get the next event in the queue
 
     wsclient["num_events"] = &ILuaClient::num_events; // Get number of events in the queue
+
+    wsclient["set_header"] = &ILuaClient::set_header; // Set a header before connecting
 
     websocket["client"] = wsclient;
 
