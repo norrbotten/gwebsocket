@@ -28,39 +28,30 @@ struct ILuaClient {
             return sol::nil;
         }
 
-        printf("[c++] next_event called, there are %i events\n", sock->num_messages());
-
         if (auto msg = sock->next_message(); msg.has_value()) {
             auto& val = msg.value();
-
-            printf("[c++] returning message to lua\n");
 
             // clang-format off
             switch (val.second.type) {
             case ix::WebSocketMessageType::Message:
-                printf("[c++] type=message\n");
                 return lua.create_table_with("size", val.second.wireSize,
                                              "type", "message",
                                              "is_binary", val.second.binary,
                                              "payload", val.first);
 
             case ix::WebSocketMessageType::Fragment:
-                printf("[c++] type=fragment\n");
                 return lua.create_table_with("size", val.second.wireSize,
                                              "type", "message_fragment",
                                              "is_binary", val.second.binary,
                                              "payload", val.first);
 
             case ix::WebSocketMessageType::Open:
-                printf("[c++] type=open\n");
                 return lua.create_table_with("type", "opened");
 
             case ix::WebSocketMessageType::Close:
-                printf("[c++] type=close\n");
                 return lua.create_table_with("type", "closed");
 
             case ix::WebSocketMessageType::Error:
-                printf("[c++] type=error\n");
                 return lua.create_table_with("type", "error",
                                              "reason", val.second.errorInfo.reason,
                                              "status", val.second.errorInfo.http_status);
@@ -70,8 +61,6 @@ struct ILuaClient {
             }
             // clang-format on
         }
-
-        printf("[c++] returning sol::nil\n");
 
         return sol::nil;
     }
@@ -146,12 +135,6 @@ struct ILuaClient {
         sol::state_view lua(s);
 
         auto sock = g_client_pool.get(id);
-
-        if (sock == nullptr)
-            printf("[c++] dead\n");
-        else
-            printf("[c++] statebong: %i\n", sock->socket().getReadyState());
-
         if (sock == nullptr || (sock != nullptr && sock->closed())) {
             call_lua_error(lua, "gwebsocket: socket is dead");
             return sol::nil;

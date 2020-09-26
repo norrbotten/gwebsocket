@@ -24,7 +24,6 @@ namespace GWebSocket {
 
             m_socket.setOnMessageCallback([&](const ix::WebSocketMessagePtr& msg_ptr) {
                 std::lock_guard g(m_messages_mtx);
-                printf("[c++] message callback\n");
 
                 if (msg_ptr->type == ix::WebSocketMessageType::Message ||
                     msg_ptr->type == ix::WebSocketMessageType::Fragment) {
