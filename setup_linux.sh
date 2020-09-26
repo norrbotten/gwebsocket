@@ -38,9 +38,10 @@ fi
 
 mkdir build && cd build
 
-cmake .. -DUSE_TLS=1 -DCMAKE_CXX_FLAGS=-m32
+cmake .. -DOPENSSL_ROOT_DIR=../openssl/ -DZLIB_LIBRARY=../zlib/ -DZLIB_INCLUDE_DIR=../zlib/ -DUSE_TLS=1 -DCMAKE_CXX_FLAGS=-m32
 
-export LD_LIBRARY_PATH=$DIR/dependencies/zlib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
-make -j
+export LD_LIBRARY_PATH=$DIR/ext/zlib:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+export CPLUS_INCLUDE_PATH=$DIR/ext/zlib:$DIR/ext/openssl:${CPLUS_INCLUDE_PATH:+:$CPLUS_INCLUDE_PATH}
+CPPFLAGS="-I../../zlib/ -I../../openssl/" make -j
 
 cd ../../..
