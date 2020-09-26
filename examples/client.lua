@@ -5,28 +5,18 @@
 
 require("gwebsocket")
 
-local listener = coroutine.wrap(function()
+local sock = gwebsocket.client.new("wss://echo.websocket.org")
 
-    local socket = gwebsocket.client.new("ws://10.10.1.171:8080")
+sock:connect()
 
-    print("connecting")
-
-    coroutine.wait(0.1) -- give it a moment to connect
-
-    while true do
-        local event = socket:next_event()
-
-        if event != nil then
-            print("got message")
-            print("size:", event.size)
-            print("type:", event.type)
-            print("payload:", event.payload)
-            print()
-        end
-
-        coroutine.yield()
+timer.Create("a", 0.5, 0, function()
+    if sock:state() == "open" then
+        sock:send("works?")
     end
 
+    while sock:num_events() > 0 do
+        local evnt = sock:next_event()
+        -- evnt may still be nil here since not everything is covered yet
+        print("received event: ", (evnt == nil) and "nil" or table.ToString(evnt))
+    end
 end)
-
-hook.Add("Tick", "listener_dispatcher", listener)
