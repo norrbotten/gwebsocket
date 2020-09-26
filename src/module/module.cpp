@@ -65,6 +65,18 @@ struct ILuaClient {
         return sol::nil;
     }
 
+    sol::object num_events(sol::this_state s) {
+        sol::state_view lua(s);
+
+        auto sock = g_client_pool.get(id);
+        if (sock == nullptr || (sock != nullptr && sock->closed())) {
+            call_lua_error(lua, "gwebsocket: socket is dead");
+            return sol::nil;
+        }
+
+        return sol::make_object(lua, sock->num_messages());
+    }
+
     void send(const std::string& payload, sol::this_state s) {
         sol::state_view lua(s);
 
@@ -176,6 +188,8 @@ DLLEXPORT int gmod13_open(lua_State* L) {
     wsclient["send_binary"] = &ILuaClient::send_binary; // Async send binary data
 
     wsclient["next_event"] = &ILuaClient::next_event; // Get the next event in the queue
+
+    wsclient["num_events"] = &ILuaClient::num_events; // Get number of events in the queue
 
     websocket["client"] = wsclient;
 
