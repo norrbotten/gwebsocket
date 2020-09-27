@@ -17,10 +17,11 @@ You have two options:
 
 This project uses premake5 to generate makefiles and currently only supports 32 bit linux builds
 
+0. If you are on a 64 bit system, make sure your compiler is setup for crosscompliling to 32 bit. If you use GCC/G++, install the `gcc-multilib` and `g++-multilib` packages with your favorite package manager.
 1. Clone the repository `git clone --recurse-submodules https://github.com/norrbotten/gwebsocket.git`
-2. Run the `setup_linux.sh` script. It will download and build both OpenSSL and ZLib for 32 bit.
+2. Run the `setup_linux.sh` script. It will download and build both all dependencies for 32 bit.
 2. Generate makefiles `premake5 gmake2`
-3. Make the module `cd build; make -j config=release`
+3. Make the module `cd build && make -j config=release && cd ..`
 4. Your compiled and ready module is now in `build/module/bin`
 
 ### Dependencies
