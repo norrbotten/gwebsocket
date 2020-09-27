@@ -131,6 +131,18 @@ struct ILuaClient {
         new_sock->connect();
     }
 
+    void set_reconnect_max_wait(sol::this_state s, double seconds) {
+        sol::state_view lua(s);
+
+        auto sock = g_client_pool.get(id);
+        if (sock != nullptr && !sock->closed()) {
+            call_lua_error(lua, "gwebsocket: socket is dead");
+            return;
+        }
+
+        sock->set_reconnect_max_wait(seconds);
+    }
+
     void close(sol::this_state s) {
         sol::state_view lua(s);
 
@@ -193,6 +205,8 @@ DLLEXPORT int gmod13_open(lua_State* L) {
                                             // and may lock up your game for a bit
 
     wsclient["reconnect"] = &ILuaClient::reconnect; // Reconnects a dead socket
+    wsclient["set_reconnect_max_wait"] =
+        &ILuaClient::set_reconnect_max_wait; // Set maximum wait between reconnects in seconds
 
     wsclient["state"] = &ILuaClient::state; // Get its state
 

@@ -20,7 +20,7 @@ namespace GWebSocket {
             m_socket.setPingInterval(45);
 
             m_socket.enableAutomaticReconnection();
-            m_socket.setMaxWaitBetweenReconnectionRetries(5);
+            m_socket.setMaxWaitBetweenReconnectionRetries(5000);
 
             m_socket.setOnMessageCallback([&](const ix::WebSocketMessagePtr& msg_ptr) {
                 std::lock_guard g(m_messages_mtx);
@@ -34,6 +34,11 @@ namespace GWebSocket {
                     m_messages.push_back({"", ix::WebSocketMessage(*msg_ptr)});
                 }
             });
+        }
+
+        void set_reconnect_max_wait(double seconds) {
+            m_socket.setMaxWaitBetweenReconnectionRetries(
+                (uint32_t)(1000 * std::max(seconds, 0.1)));
         }
 
         bool set_header(const std::string& key, const std::string& value) {
