@@ -188,6 +188,14 @@ struct ILuaClient {
 
         sock->set_header(key, value);
     }
+
+    void gc(sol::this_state) {
+        auto sock = g_client_pool.get(id);
+        if (sock == nullptr || (sock != nullptr && sock->closed())) {
+            return;
+        }
+        sock->close();
+    }
 };
 
 DLLEXPORT int gmod13_open(lua_State* L) {
@@ -218,6 +226,8 @@ DLLEXPORT int gmod13_open(lua_State* L) {
     wsclient["num_events"] = &ILuaClient::num_events; // Get number of events in the queue
 
     wsclient["set_header"] = &ILuaClient::set_header; // Set a header before connecting
+
+    wsclient["__gc"] = &ILuaClient::gc; // Cleanup the socket when Lua GC's it
 
     websocket["client"] = wsclient;
 
