@@ -29,6 +29,7 @@ end
 
 function includeIXWebSockets()
     links { "ixwebsocket:static", "z:static", "ssl:static", "crypto:static", "pthread", "dl" }
+    includedirs { "ext/ixwebsocket" }
     libdirs { "ext/zlib", "ext/ixwebsocket/build", "ext/openssl" }
 end
 
